@@ -134,7 +134,8 @@ def main():
                 if e.key == K_ESCAPE:
                     running = False
                 if e.key == K_SPACE:
-                    isShooting = True
+                    # isShooting = True
+                    player.shoot(bullet_list)
 
             elif e.type == QUIT:
                 running = False
@@ -146,17 +147,13 @@ def main():
         player.update(pressed_keys)
 
 
-        if isShooting and not bullet_list:
-            player.shoot(bullet_list)
-            isShooting = False
-        if bullet_list:
-            bullet_list[0].update(bullet_list)
-            
+        # if isShooting and not bullet_list:
+        #     player.shoot(bullet_list)
+        #     isShooting = False
 
-            
+        for bullet in bullet_list:
+            bullet.update(bullet_list)
 
-        # print(bullet.x)
-        # print(bullet.y)
         pygame.display.flip()
 
 
