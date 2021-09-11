@@ -1,5 +1,6 @@
 import constants
 import pygame
+import random
 from pygame.locals import *
 
 class GameEntity:
@@ -48,9 +49,9 @@ class Player(GameEntity):
 
 
     def boundaries(self):
-        if self.rect.left < 0:
+        if self.rect.right < 0:
             self.rect.right = constants.WINDOW_LENGTH
-        if self.rect.right > constants.WINDOW_LENGTH:
+        if self.rect.left > constants.WINDOW_LENGTH:
             self.rect.left = 0
         if self.rect.top < 0:
             self.rect.top = 0
@@ -68,18 +69,50 @@ class Player(GameEntity):
         bullet_list.append(bullet)
         
 
-
-
 class Asteroid(GameEntity):
-    def __init__(self, x, y):
-        super().__init__(x, y)
+
+    asteroidWidth = 40
+    asteroidHeight = 40
+
+    x = 0
+    y = 0
+
+    frames = 0
+
+    def __init__(self, x, y, gameDisplay):
+        self.rect = Rect(x, y, self.asteroidWidth, self.asteroidHeight)
+        self.x = x
+        self.y = y
+        self.gameDisplay = gameDisplay  
+
+    def printAsteroid(self):
+        pygame.draw.rect(self.gameDisplay, (255, 255, 0), self.rect)
+
+    def update(self, asteroid_list):
+        self.printAsteroid()
+        if self.frames == 0:
+            self.frames = 20
+            self.rect.move_ip(0,1)
+            self.y += 1
+
+        if self.frames > 0:
+            self.frames -= 1
+
+        if self.y > 500:
+            asteroid_list.remove(self)
+        
+
+    def spawnAsteroid(self, time, asteroid_list):
+        if time % 5 == 0:
+            new_asteroid = Asteroid(random.randrange(10, 450), -40, self.gameDisplay)
+            asteroid_list.append(new_asteroid)
+        
 
 class Bullet(GameEntity):
 
-    bulletSizeWidth = 100
-    bulletSizeHeight = 100
     radius = 5
 
+    # x,y for centre of circle
     x = 0
     y = 0
     frames = 0
@@ -117,17 +150,19 @@ def main():
     
 
     gameDisplay = pygame.display.set_mode([constants.WINDOW_LENGTH, constants.WINDOW_HEIGHT])
-    player = Player(100, (constants.WINDOW_HEIGHT*4)/5, gameDisplay)      
-    # player = Player(constants.WINDOW_LENGTH/2, (constants.WINDOW_HEIGHT*4)/5, gameDisplay)
-    bullet = Bullet(constants.WINDOW_LENGTH/2, (constants.WINDOW_HEIGHT*4)/5, gameDisplay)
+     
+    player = Player(constants.WINDOW_LENGTH/2, (constants.WINDOW_HEIGHT*4)/5, gameDisplay)
     running = True
-    isShooting = False
 
     bullet_list = []
+    asteroid_list = []
+
+    time = 0
 
     while running:
 
         events = pygame.event.get()
+        gameDisplay.fill((0, 0, 0))
 
         for e in events:
             if e.type == KEYDOWN:
@@ -142,18 +177,21 @@ def main():
             
 
         pressed_keys = pygame.key.get_pressed()
-
-        gameDisplay.fill((0, 0, 0))
         player.update(pressed_keys)
 
-
-        # if isShooting and not bullet_list:
-        #     player.shoot(bullet_list)
-        #     isShooting = False
-
+        if time % 4000 == 0:
+            new_asteroid = Asteroid(random.randrange(10, 450), -40, gameDisplay)
+            asteroid_list.append(new_asteroid)
+        
         for bullet in bullet_list:
             bullet.update(bullet_list)
 
+        for asteroid in asteroid_list:
+            asteroid.update(asteroid_list)
+
+    
+
+        time += 1
         pygame.display.flip()
 
 
