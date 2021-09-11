@@ -93,7 +93,7 @@ class Bullet(GameEntity):
     def printBullet(self):
         pygame.draw.circle(self.gameDisplay, (255, 0, 0), (self.x, self.y), self.radius)
 
-    def update(self):
+    def update(self, bullet_list):
         self.printBullet()
         if self.frames == 0:
             self.frames = 2
@@ -102,6 +102,11 @@ class Bullet(GameEntity):
 
         if self.frames > 0:
             self.frames -= 1
+
+        if self.y < 0:
+            bullet_list.remove(self)
+
+            
     
     
 
@@ -140,10 +145,14 @@ def main():
         gameDisplay.fill((0, 0, 0))
         player.update(pressed_keys)
 
-        if isShooting:
+
+        if isShooting and not bullet_list:
             player.shoot(bullet_list)
+            isShooting = False
         if bullet_list:
-            bullet_list[0].update()
+            bullet_list[0].update(bullet_list)
+            
+
             
 
         # print(bullet.x)
