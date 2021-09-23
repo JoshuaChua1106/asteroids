@@ -169,6 +169,7 @@ class Collisions():
 class Score():
 
     total = 0
+    increment = 1
 
     def __init__(self, total, font):
         self.total = total
@@ -177,14 +178,20 @@ class Score():
     def getTotal(self):
         return self.total
 
+    def setTotal(self, total):
+        self.total = total
+
     def updateTotal(self):
-        self.total += 1
+        self.total += self.increment
     
     def printScore(self, gameDisplay):
         text = self.font.render(str(self.total), True, (255, 255, 255))
         textRect = text.get_rect()
         textRect.center = (200, 200) 
         gameDisplay.blit(text, textRect)
+
+    def updateIncrement(self, new_inc):
+        self.increment += new_inc
 
 
 
@@ -224,6 +231,9 @@ def main():
                 if e.key == K_SPACE:
                     # isShooting = True
                     player.shoot(bullet_list)
+                if e.key == K_1 and score.getTotal() >= 2:
+                    score.setTotal(score.getTotal()-2)
+                    score.updateIncrement(1)
 
             elif e.type == QUIT:
                 running = False
