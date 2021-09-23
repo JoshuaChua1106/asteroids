@@ -3,6 +3,7 @@ import pygame
 import random
 from pygame.locals import *
 
+
 class GameEntity:
     def __init__(self, x, y):
         self.x = x
@@ -88,7 +89,7 @@ class Asteroid(GameEntity):
     def printAsteroid(self):
         pygame.draw.rect(self.gameDisplay, (255, 255, 0), self.rect)
 
-    def update(self, asteroid_list):
+    def update(self, asteroid_list, rect_list):
         self.printAsteroid()
         if self.frames == 0:
             self.frames = 20
@@ -100,12 +101,15 @@ class Asteroid(GameEntity):
 
         if self.y > 500:
             asteroid_list.remove(self)
-        
+            rect_list.remove(self)
 
     def spawnAsteroid(self, time, asteroid_list):
         if time % 5 == 0:
             new_asteroid = Asteroid(random.randrange(10, 450), -40, self.gameDisplay)
             asteroid_list.append(new_asteroid)
+    
+    def getRect(self):
+        return self.rect
         
 
 class Bullet(GameEntity):
@@ -118,15 +122,16 @@ class Bullet(GameEntity):
     frames = 0
 
     def __init__(self, x, y, gameDisplay):
+        self.x = x
+        self.y = y  
         self.rect = pygame.Rect(self.x-self.radius, self.y-self.radius, self.radius*2, self.radius*2) #left, top, width, height
         self.gameDisplay = gameDisplay
-        self.x = x
-        self.y = y   
+         
     
     def printBullet(self):
         pygame.draw.circle(self.gameDisplay, (255, 0, 0), (self.x, self.y), self.radius)
 
-    def update(self, bullet_list):
+    def update(self, bullet_list, rect_list, asteroid_list):
         self.printBullet()
         if self.frames == 0:
             self.frames = 2
@@ -139,7 +144,51 @@ class Bullet(GameEntity):
         if self.y < 0:
             bullet_list.remove(self)
 
-            
+
+    def getRect(self):
+        return self.rect
+
+    def collision(self, rect_list):
+        return self.rect.collidelist(rect_list)
+           
+
+
+class Collisions():
+
+    @staticmethod
+    def collide(bullet, bullet_list, rect_list, asteroid_list, score):
+        collision_index = bullet.collision(rect_list)
+        if collision_index != -1:
+            bullet_list.remove(bullet)
+            rect_list.pop(collision_index)
+            asteroid_list.pop(collision_index)
+
+            score.updateTotal()
+        
+
+class Score():
+
+    total = 0
+
+    def __init__(self, total, font):
+        self.total = total
+        self.font = font
+
+    def getTotal(self):
+        return self.total
+
+    def updateTotal(self):
+        self.total += 1
+    
+    def printScore(self, gameDisplay):
+        text = self.font.render(str(self.total), True, (255, 255, 255))
+        textRect = text.get_rect()
+        textRect.center = (200, 200) 
+        gameDisplay.blit(text, textRect)
+
+
+
+
     
     
 
@@ -147,15 +196,19 @@ class Bullet(GameEntity):
 def main():
     pygame.init()
 
-    
+    font = pygame.font.Font('freesansbold.ttf', 13) 
+
 
     gameDisplay = pygame.display.set_mode([constants.WINDOW_LENGTH, constants.WINDOW_HEIGHT])
      
     player = Player(constants.WINDOW_LENGTH/2, (constants.WINDOW_HEIGHT*4)/5, gameDisplay)
     running = True
 
+    score = Score(0, font)
+
     bullet_list = []
     asteroid_list = []
+    rect_list = []
 
     time = 0
 
@@ -182,14 +235,19 @@ def main():
         if time % 4000 == 0:
             new_asteroid = Asteroid(random.randrange(10, 450), -40, gameDisplay)
             asteroid_list.append(new_asteroid)
+            rect_list.append(new_asteroid.getRect())
         
+        
+
         for bullet in bullet_list:
-            bullet.update(bullet_list)
-
+            bullet.update(bullet_list, rect_list, asteroid_list)
+            Collisions.collide(bullet, bullet_list, rect_list, asteroid_list, score)
+            
         for asteroid in asteroid_list:
-            asteroid.update(asteroid_list)
-
-    
+            asteroid.update(asteroid_list, rect_list)
+            
+        
+        score.printScore(gameDisplay)
 
         time += 1
         pygame.display.flip()
