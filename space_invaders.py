@@ -15,15 +15,23 @@ class Player(GameEntity):
     playerSizeWidth = 35
     frames = 0
     shooting = False
+    shooting_level2 = False
+    shooting_level3 = False
+    shootingCooldown = False
+
+    current_shooting_level = 1
+
+    time = 0
 
     def __init__(self, x, y, gameDisplay):
         self.rect = Rect(x-(self.playerSizeWidth/2), y, self.playerSizeWidth, self.playerSizeHeight)
         self.gameDisplay = gameDisplay    
 
-    def update(self, pressed_keys):
+    def update(self, pressed_keys, bullet_list):
         self.printPlayer()
         self.boundaries()
 
+        # Moving
         if pressed_keys[K_RIGHT]:
             if self.frames == 0:
                 self.frames = 2
@@ -44,6 +52,27 @@ class Player(GameEntity):
         if self.frames > 0:
             self.frames -= 1
 
+
+        # Shooting
+        if pressed_keys[K_SPACE] and self.shootingCooldown == False:
+            self.shootingCooldown = True
+            self.shoot(bullet_list)
+
+            # If upgrades are activated
+            if self.shooting_level2:
+                self.shootlvl2(bullet_list)
+        
+            if self.shooting_level3:
+                self.shootlvl3(bullet_list)
+
+        if self.shootingCooldown:
+            self.time += 1
+        
+        if self.time == 300:
+            self.time = 0
+            self.shootingCooldown = False
+
+        
 
     def printPlayer(self):
         pygame.draw.rect(self.gameDisplay, (255, 0, 0), self.rect)
@@ -68,7 +97,26 @@ class Player(GameEntity):
     def shoot(self, bullet_list):
         bullet = Bullet(self.getXCentre(), self.getYCentre(), self.gameDisplay)
         bullet_list.append(bullet)
-        
+    
+    def shootlvl2(self, bullet_list):
+        bullet = Bullet(self.getXCentre()-(self.playerSizeWidth/3), self.getYCentre(), self.gameDisplay)
+        bullet_list.append(bullet)
+    
+    def shootlvl3(self, bullet_list):
+        bullet = Bullet(self.getXCentre()+(self.playerSizeWidth/3), self.getYCentre(), self.gameDisplay)
+        bullet_list.append(bullet)
+
+    def setshootlevel(self, level):
+        if level == 2:
+            self.shooting_level2 = True
+            self.current_shooting_level = 2
+        if level == 3:
+            self.shooting_level3 = True
+            self.current_shooting_level = 3
+
+    def getShootingLevel(self):
+        return self.current_shooting_level
+    
 
 class Asteroid(GameEntity):
 
@@ -194,6 +242,11 @@ class Score():
         self.increment += new_inc
 
 
+class Shop():
+    
+    @staticmethod
+    def upgradeShooting(self, player):
+        pass
 
 
     
@@ -228,19 +281,32 @@ def main():
             if e.type == KEYDOWN:
                 if e.key == K_ESCAPE:
                     running = False
-                if e.key == K_SPACE:
-                    # isShooting = True
-                    player.shoot(bullet_list)
+                # if e.key == K_SPACE:
+                #     # isShooting = True
+                #     player.shoot(bullet_list)
                 if e.key == K_1 and score.getTotal() >= 2:
                     score.setTotal(score.getTotal()-2)
                     score.updateIncrement(1)
+
+                if e.key == K_2 and player.getShootingLevel() != 3 and score.getTotal() >= 20:
+                    score.setTotal(score.getTotal()-20)
+                    if player.getShootingLevel() == 2:
+                        player.setshootlevel(3)
+
+                    if player.getShootingLevel() == 1:
+                        player.setshootlevel(2)
+                    
+                        
+                if e.key == K_3:
+                    print(player.shooting_level3)
+
 
             elif e.type == QUIT:
                 running = False
             
 
         pressed_keys = pygame.key.get_pressed()
-        player.update(pressed_keys)
+        player.update(pressed_keys, bullet_list)
 
         if time % 4000 == 0:
             new_asteroid = Asteroid(random.randrange(10, 450), -40, gameDisplay)
